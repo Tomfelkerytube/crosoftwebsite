@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; background: #f0f2f5;
+    }
+    .card {
+      background: white; padding: 2rem; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1); width: 100%; max-width: 400px;
+    }
+    h1 { margin-bottom: 0.5rem; font-size: 1.5rem; }
+    p { color: #666; margin-bottom: 1.5rem; }
+    input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+    button {
+      width: 100%; padding: 0.75rem; background: #2563eb; color: white;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-bottom: 0.5rem;
+    }
+    button:hover { background: #1d4ed8; }
+    button.google { background: #fff; color: #333; border: 1px solid #ddd; }
+    button.google:hover { background: #f5f5f5; }
+    .toggle { text-align: center; margin-top: 1rem; color: #2563eb; cursor: pointer; }
+    .toggle:hover { text-decoration: underline; }
+    .error { color: #dc2626; margin-bottom: 1rem; font-size: 0.9rem; }
+    .divider { text-align: center; color: #999; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="form-title">Sign In</h1>
+    <p id="form-subtitle">Welcome back</p>
+    <div class="error" id="error-msg"></div>
+    <input type="email" id="email" placeholder="Email" autocomplete="email">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button id="submit-btn">Sign In</button>
+    <div class="divider">or</div>
+    <button class="google" id="google-btn">Continue with Google</button>
+    <p class="toggle" id="toggle-link">Don't have an account? Sign up</p>
+  </div>
+
+  <script>
+    let isSignUp = false
+
+    const emailInput = document.getElementById('email')
+    const passwordInput = document.getElementById('password')
+    const submitBtn = document.getElementById('submit-btn')
+    const googleBtn = document.getElementById('google-btn')
+    const toggleLink = document.getElementById('toggle-link')
+    const formTitle = document.getElementById('form-title')
+    const formSubtitle = document.getElementById('form-subtitle')
+    const errorMsg = document.getElementById('error-msg')
+
+    getSession().then(({ session }) => {
+      if (session) window.location.href = 'dashboard.html'
+    })
+
+    submitBtn.addEventListener('click', async () => {
+      errorMsg.textContent = ''
+      const email = emailInput.value.trim()
+      const password = passwordInput.value
+
+      if (!email || !password) {
+        errorMsg.textContent = 'Please fill in all fields'
+        return
+      }
+
+      let result
+      if (isSignUp) {
+        result = await signUp(email, password)
+        if (!result.error) {
+          errorMsg.style.color = '#16a34a'
+          errorMsg.textContent = 'Check your email for confirmation!'
+          return
+        }
+      } else {
+        result = await signIn(email, password)
+        if (!result.error) window.location.href = 'dashboard.html'
+      }
+
+      if (result.error) {
+        errorMsg.style.color = '#dc2626'
+        errorMsg.textContent = result.error.message
+      }
+    })
+
+    googleBtn.addEventListener('click', async () => {
+      await signInWithOAuth('google')
+    })
+
+    toggleLink.addEventListener('click', () => {
+      isSignUp = !isSignUp
+      formTitle.textContent = isSignUp ? 'Sign Up' : 'Sign In'
+      formSubtitle.textContent = isSignUp ? 'Create your account' : 'Welcome back'
+      submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In'
+      toggleLink.textContent = isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"
+    })
+  </script>
+</body>
+</html>
